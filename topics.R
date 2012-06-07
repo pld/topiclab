@@ -11,10 +11,14 @@ corpus <- lexicalize(text, lower=TRUE)
 
 # only keep words that appear at least twice
 to.keep <- corpus$vocab[word.counts(corpus$documents, corpus$vocab) >= 2]
+# remove words less than 3 characters
+to.keep <- to.keep[apply(as.array(to.keep), 1, nchar) >= 3]
+# remove stop words
+library(tm)
+to.keep <- to.keep[!apply(as.array(to.keep), 1, '%in%', stopwords('english'))]
 documents <- lexicalize(text, lower=TRUE, vocab=to.keep)
 
-/* params for LDA */
-
+# params for LDA
 # number of topics
 K <- 10
 
@@ -27,13 +31,11 @@ alpha <- 0.1
 # Dirichlet hyperparameter for topic multinominals
 eta <- 0.1
 
-/* end params for LDA */
-
 # form LDA topics
 latent.params <- lda.collapsed.gibbs.sampler(documents, K, to.keep,
         num.iterations, alpha, eta)
 
-/* params for topic words */
+# params for topic words
 num.topic.words <- 5
 
 # find most representative words for each topic
@@ -42,3 +44,4 @@ for (i in 1:K) {
     top.words <- c(top.words, to.keep[sort.list(latent.params$topics[i,],
                 decreasing=TRUE)[0:num.topic.words]])
 }
+# TODO: only keep words unique from all others
