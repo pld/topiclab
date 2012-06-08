@@ -6,16 +6,27 @@ df <- read.csv('ureport.csv', stringsAsFactors=FALSE)
 # extract text from data file
 text <- as.character(df['response'])
 
+# remove non alphanumeric
+text <- apply(as.array(text), 1, function(x) gsub('[",\\*\n._!?&()]', ' ', x))
+
 # build corpus from relevant data file column
 corpus <- lexicalize(text, lower=TRUE)
 
 # only keep words that appear at least twice
 to.keep <- corpus$vocab[word.counts(corpus$documents, corpus$vocab) >= 2]
-# remove words less than 3 characters
-to.keep <- to.keep[apply(as.array(to.keep), 1, nchar) >= 3]
+
+# remove words less than 4 characters
+to.keep <- to.keep[apply(as.array(to.keep), 1, nchar) > 3]
+
 # remove stop words
 library(tm)
-to.keep <- to.keep[!apply(as.array(to.keep), 1, '%in%', stopwords('english'))]
+stop.words = c("coz", "bse", "b'se", "gov't", "you", "think", "government",
+        "has", "done", "enough", "promote", "inclusive", "education", "for",
+        "children", "and", "youth", "living", "with", "disabilities", "school",
+        "schools", "disabled", "disability", "bcoz", "becoz", "esp", "dem",
+        "govt", "facilities", "special", "people", "becouse", "help")
+to.keep <- to.keep[!apply(as.array(to.keep), 1, '%in%', c(stop.words,
+            stopwords('english')))]
 documents <- lexicalize(text, lower=TRUE, vocab=to.keep)
 
 # params for LDA
