@@ -73,3 +73,5 @@ for (i in 1:K) {
     top.documents <- rbind(top.documents, text[top.indices])
 }
 
+# show probabilities for first topic
+latent.params$topics[,top.words[1,]]
