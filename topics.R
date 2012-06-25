@@ -3,8 +3,13 @@ library(lda)
 # load data file
 df <- read.csv('ureport.csv', stringsAsFactors=FALSE)
 
+# remove non-English, remove short yes/no answers
+text <- df$response[intersect(which(df$language == 'en'),
+        which(nchar(df$response) > 3))]
+
 # extract text from data file
-text <- as.character(df['response'])
+#text <- as.character(text)
+
 
 # remove non alphanumeric
 text <- apply(as.array(text), 1, function(x) gsub('[",\\*\n._!?&()]', ' ', x))
@@ -29,6 +34,7 @@ to.keep <- to.keep[!apply(as.array(to.keep), 1, '%in%', c(stop.words,
             stopwords('english')))]
 documents <- lexicalize(text, lower=TRUE, vocab=to.keep)
 
+################
 # params for LDA
 # number of topics
 K <- 10
@@ -41,6 +47,7 @@ alpha <- 0.1
 
 # Dirichlet hyperparameter for topic multinominals
 eta <- 0.1
+################
 
 # form LDA topics
 latent.params <- lda.collapsed.gibbs.sampler(documents, K, to.keep,
@@ -48,11 +55,21 @@ latent.params <- lda.collapsed.gibbs.sampler(documents, K, to.keep,
 
 # params for topic words
 num.topic.words <- 5
+num.topic.docs <- 5
 
-# find most representative words for each topic
-top.words <- c()
+top.words <- vector()
+top.documents <- vector()
+
 for (i in 1:K) {
-    top.words <- c(top.words, to.keep[sort.list(latent.params$topics[i,],
-                decreasing=TRUE)[0:num.topic.words]])
+    # find most representative words for each topic
+    top.words <- rbind(top.words, to.keep[sort.list(latent.params$topics[i,],
+            decreasing=TRUE)[0:num.topic.words]])
+    # TODO: only keep words unique from all others
+
+    # find most representative documents for each topic
+    top.indices <- sort(latent.params$document_sum[i,], decreasing=TRUE,
+            index.return=TRUE)$ix[0:num.topic.docs]
+
+    top.documents <- rbind(top.documents, text[top.indices])
 }
-# TODO: only keep words unique from all others
+
