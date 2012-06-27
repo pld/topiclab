@@ -7,10 +7,6 @@ df <- read.csv('ureport.csv', stringsAsFactors=FALSE)
 text <- df$response[intersect(which(df$language == 'en'),
         which(nchar(df$response) > 3))]
 
-# extract text from data file
-#text <- as.character(text)
-
-
 # remove non alphanumeric
 text <- apply(as.array(text), 1, function(x) gsub('[",\\*\n._!?&()]', ' ', x))
 
@@ -53,9 +49,8 @@ eta <- 0.1
 latent.params <- lda.collapsed.gibbs.sampler(documents, K, to.keep,
         num.iterations, alpha, eta)
 
-# params for topic words
-num.topic.words <- 5
 num.topic.docs <- 5
+num.topic.words <- 50
 
 top.words <- vector()
 top.documents <- vector()
@@ -63,15 +58,49 @@ top.documents <- vector()
 for (i in 1:K) {
     # find most representative words for each topic
     top.words <- rbind(top.words, to.keep[sort.list(latent.params$topics[i,],
-            decreasing=TRUE)[0:num.topic.words]])
+            decreasing=TRUE)[1:num.topic.words]])
     # TODO: only keep words unique from all others
 
     # find most representative documents for each topic
     top.indices <- sort(latent.params$document_sum[i,], decreasing=TRUE,
-            index.return=TRUE)$ix[0:num.topic.docs]
+            index.return=TRUE)$ix[1:num.topic.docs]
 
     top.documents <- rbind(top.documents, text[top.indices])
 }
 
-# show probabilities for first topic
-latent.params$topics[,top.words[1,]]
+top.words.unique <- vector()
+num.topic.words <- 5
+
+library(rjson)
+json.string <- 'var data = ['
+#topic.cloud.strings <- c()
+
+for (i in 1:K) {
+    # calculate unique words per topic
+    row <- c()
+    for (j in 1:dim(top.words)[2]) {
+        if (!(top.words[i, j] %in% top.words[-i,])) {
+            row <- c(row, top.words[i, j])
+        }
+        if (length(row) >= num.topic.words) {
+            break
+        }
+    }
+    top.words.unique <- rbind(top.words.unique, row)
+
+    # build word cloud strings
+
+#    string <- ''
+    for (word in top.words.unique[i,]) {
+        json.string <- paste(c(json.string,
+                toJSON(latent.params$topics[i, word]),
+                ','), collapse='')
+#        string <- paste(c(string, rep(word, latent.params$topics[i, word])),
+#                collapse=' ')
+    }
+#    topic.cloud.strings <- c(topic.cloud.strings, string)
+}
+
+json.string <- paste(c(substr(json.string, 1, nchar(json.string) - 1), ']'),
+        collapse='')
+cat(json.string, file='data.js')
