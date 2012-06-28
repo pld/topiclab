@@ -33,7 +33,7 @@ documents <- lexicalize(text, lower=TRUE, vocab=to.keep)
 ################
 # params for LDA
 # number of topics
-K <- 10
+K <- 5
 
 # number of iterations
 num.iterations <- 10
@@ -50,7 +50,7 @@ latent.params <- lda.collapsed.gibbs.sampler(documents, K, to.keep,
         num.iterations, alpha, eta)
 
 num.topic.docs <- 5
-num.topic.words <- 50
+num.topic.words <- 100
 
 top.words <- vector()
 top.documents <- vector()
@@ -69,11 +69,10 @@ for (i in 1:K) {
 }
 
 top.words.unique <- vector()
-num.topic.words <- 5
+num.topic.words <- 10
 
 library(rjson)
-json.string <- 'var data = ['
-#topic.cloud.strings <- c()
+json.string <- 'var topics = ['
 
 for (i in 1:K) {
     # calculate unique words per topic
@@ -90,17 +89,20 @@ for (i in 1:K) {
 
     # build word cloud strings
 
-#    string <- ''
+    json.string <- sprintf('%s[', json.string, i)
     for (word in top.words.unique[i,]) {
-        json.string <- paste(c(json.string,
-                toJSON(latent.params$topics[i, word]),
-                ','), collapse='')
-#        string <- paste(c(string, rep(word, latent.params$topics[i, word])),
-#                collapse=' ')
+        json.string <- sprintf('%s%s', json.string,
+                toJSON(latent.params$topics[i, word]))
+        if (word != top.words.unique[i, num.topic.words]) {
+            json.string <- sprintf('%s,', json.string)
+        }
     }
-#    topic.cloud.strings <- c(topic.cloud.strings, string)
+
+    json.string <- sprintf('%s]', json.string)
+    if (i != K) {
+        json.string <- sprintf('%s,', json.string)
+    }
 }
 
-json.string <- paste(c(substr(json.string, 1, nchar(json.string) - 1), ']'),
-        collapse='')
-cat(json.string, file='data.js')
+json.string <- sprintf('%s];', json.string, i)
+cat(json.string, file='lib/data.js')
