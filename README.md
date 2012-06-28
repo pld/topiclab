@@ -1,4 +1,4 @@
 topiclab
 ========
 
-Topic Modelling Snippets
+Topic Modelling Snippets, with some pretty [graphs](http://pld.github.com/topiclab/).
