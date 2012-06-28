@@ -1,4 +1,0 @@
-topiclab
-========
-
-Topic Modelling Snippets
