@@ -7,6 +7,9 @@ df <- read.csv('ureport.csv', stringsAsFactors=FALSE)
 text <- df$response[intersect(which(df$language == 'en'),
         which(nchar(df$response) > 3))]
 
+districts <- df$district[intersect(which(df$language == 'en'),
+        which(nchar(df$response) > 3))]
+
 # remove non alphanumeric
 text <- apply(as.array(text), 1, function(x) gsub('[",\\*\n._!?&()]', ' ', x))
 
@@ -52,20 +55,34 @@ latent.params <- lda.collapsed.gibbs.sampler(documents, K, to.keep,
 num.topic.docs <- 5
 num.topic.words <- 100
 
+library(hash)
 top.words <- vector()
 top.documents <- vector()
+district_sums <- c()
 
 for (i in 1:K) {
     # find most representative words for each topic
     top.words <- rbind(top.words, to.keep[sort.list(latent.params$topics[i,],
             decreasing=TRUE)[1:num.topic.words]])
-    # TODO: only keep words unique from all others
 
     # find most representative documents for each topic
     top.indices <- sort(latent.params$document_sum[i,], decreasing=TRUE,
             index.return=TRUE)$ix[1:num.topic.docs]
 
     top.documents <- rbind(top.documents, text[top.indices])
+
+    # aggregate topic counts by district via documents
+    topic.district_sums <- hash()
+    for (j in 1:length(districts)) {
+        doc.sum <- latent.params$document_sum[i, j]
+        if (doc.sum > 0) {
+            if (has.key(districts[j], topic.district_sums)) {
+                doc.sum <- doc.sum + topic.district_sums[[districts[j]]]
+            }
+            topic.district_sums[[districts[j]]] <- doc.sum
+        }
+    }
+    district_sums <- c(district_sums, topic.district_sums)
 }
 
 top.words.unique <- vector()
@@ -104,5 +121,17 @@ for (i in 1:K) {
     }
 }
 
-json.string <- sprintf('%s];', json.string, i)
+json.string <- sprintf('%s];\nvar districts=[', json.string)
+
+for (i in 1:K) {
+    json.string <- sprintf('%s%s', json.string,
+            toJSON(as.list(district_sums[[i]])))
+    if (i < K) {
+        json.string <- sprintf('%s,', json.string)
+    }
+}
+
+json.string <- sprintf('%s];', json.string)
+
+
 cat(json.string, file='lib/data.js')
