@@ -1,9 +1,30 @@
 <!DOCTYPE html>
-<head><title>Ureport</title></head>
-<meta charset="utf-8">
-<script src="http://mbostock.github.com/d3/d3.v2.min.js"></script>
-<script src="lib/d3.layout.cloud.js"></script>
-<script src="lib/jsonp.js"></script>
-<script src="lib/data.js"></script>
+<head>
+  <title>Ureport</title>
+  <meta charset="utf-8">
+  <script src="http://mbostock.github.com/d3/d3.v2.min.js"></script>
+  <script src="lib/d3.layout.cloud.js"></script>
+  <script src="lib/jsonp.js"></script>
+  <script src="lib/data.js"></script>
+  <style type='text/css'>
+    .chart rect {
+      stroke: white;
+      fill: steelblue;
+    }
+    .chart text {
+      font: 10px sans-serif;
+      text-align: right;
+      padding: 3px;
+      margin: 1px;
+      color: white;
+    }
+  </style>
+</head>
 <body>
+<p>The Ureport data was divided into 5 topics (number not selected for any speical reason) based on the LDA algorithm, which uses word co-occurence.</p>
+<p>Note the bars are not normalized by response occurence, and they should be.</p>
+<p>The bar charts show, from topic 1 on the left to topic 5 on the right, the number of times a response from that district was assigned to this topic.</p>
+<p>The tag clouds, below, show the first 10 unique words by frequency for each topic scaled based on number of occurences in the topic.</p>
+<p>Note that LDA is a stochastic algorithm, another run will produce different topics, different unique words, and different frequencies for those unique words.</p>
 <script src="lib/cloud.js"></script>
+<script src="lib/districts.js"></script>
